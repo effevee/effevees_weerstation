@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto:2.0
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - iot
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:2.2
+    ports:
+      - "8086:8086"
+    networks:
+      - iot
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=effevee
+      - DOCKER_INFLUXDB_INIT_BUCKET=weatherdata
+      - DOCKER_INFLUXDB_INIT_RETENTION=365d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_TELEGRAF_TOKEN}
+    volumes:
+      - influxdb-config:/etc/influxdb2
+      - influxdb-data:/var/lib/influxdb2
+
+  telegraf:
+    container_name: telegraf
+    image: telegraf:1.22
+    networks:
+      - iot
+    environment:
+      - DOCKER_INFLUXDB_INIT_ORG=effevee
+      - DOCKER_INFLUXDB_INIT_BUCKET=weatherdata
+      - DOCKER_INFLUXDB_TELEGRAF_TOKEN=${DOCKER_INFLUXDB_TELEGRAF_TOKEN}
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    depends_on:
+      - mosquitto
+      - influxdb
+
+networks:
+  iot:
+
+volumes:
+  mosquitto-data:
+  mosquitto-log:
+  influxdb-config:
+
