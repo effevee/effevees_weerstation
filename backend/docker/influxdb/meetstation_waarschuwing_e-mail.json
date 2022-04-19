@@ -1,0 +1,26 @@
+{
+ "meta": {
+  "version": "1",
+  "type": "task",
+  "name": "Meetstation waarschuwing e-mail-Template",
+  "description": "template created from task: Meetstation waarschuwing e-mail"
+ },
+ "content": {
+  "data": {
+   "type": "task",
+   "attributes": {
+    "status": "active",
+    "name": "Meetstation waarschuwing e-mail",
+    "flux": "import \"http\"\nimport \"json\"\nimport \"influxdata/influxdb/secrets\"\n\noption task = {name: \"Meetstation waarschuwing e-mail\", every: 1h}\n\nSENDGRID_APIKEY = secrets.get(key: \"SENDGRID_APIKEY\")\n\nnumberOfDeads =\n    from(bucket: \"_monitoring\")\n        |> range(start: -task.every)\n        |> filter(fn: (r) => r._measurement == \"statuses\" and r._field == \"dead\" and r._value == true)\n        |> count()\n\nnumberOfDeads\n    |> map(\n        fn:\n            (r) =>\n                if r._value > 3 then\n                    {r with _value:\n                            http.post(\n                                url: \"https://api.sendgrid.com/v3/mail/send\",\n                                headers: {\n                                    \"Content-Type\": \"application/json\",\n                                    \"Authorization\": \"Bearer ${SENDGRID_APIKEY}\",\n                                },\n                                data:\n                                    json.encode(\n                                        v:\n                                            {\n                                                \"personalizations\": [{\"to\": [{\"email\": \"effevee@gmail.com\"}]}],\n                                                \"from\": {\"email\": \"effevee@gmail.com\"},\n                                                \"subject\": \"Effevee's weerstation waarschuwing\",\n                                                \"content\":\n                                                    [\n                                                        {\n                                                            \"type\": \"text/plain\",\n                                                            \"value\":\n                                                                \"Opgelet: het meetstation heeft reeds meer dan ${r._value} maal geen gegevens verstuurd.\",\n                                                        },\n                                                    ],\n                                            },\n                                    ),\n                            ),\n                    }\n                else\n                    {r with _value: 0},\n    )",
+    "every": "1h"
+   },
+   "relationships": {
+    "label": {
+     "data": []
+    }
+   }
+  },
+  "included": []
+ },
+ "labels": []
+}
