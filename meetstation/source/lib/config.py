@@ -1,3 +1,6 @@
+# Station ID
+STATION_ID = "<Your Station ID>"
+
 # I2C pins
 SCL_PIN = 22   # D22
 SDA_PIN = 21   # D21

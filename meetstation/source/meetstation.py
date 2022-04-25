@@ -122,11 +122,15 @@ def connect_wifi():
     if sta_if.isconnected():
         print('')
         print('connected to {} network with ip address {}' .format(config.SSID, sta_if.ifconfig()[0]))
+        # return WiFi signal strength (Received Signal Strength Indicator)
+        return sta_if.status('rssi')
 
     else:
         print('')
         print('no connection to {} network' .format(config.SSID))
+        # no WiFi
         raise RuntimeError('WiFi connection failed')
+        return 0
 
             
 ####################################################################################
@@ -135,7 +139,7 @@ def connect_wifi():
 
 def get_weather_data():
     ''' get current weather data from OpenWeather.org.
-        return results in list with following data :
+        return results in dictionary with following data :
         - 'temp' : current/day temperature
         - 'hum' : humidity
         - 'pres' : pressure  '''
@@ -196,7 +200,7 @@ def temperature_2_unit(celsius):
 ####################################################################################
 
 def get_sensor_readings():
-    ''' get readings from all sensors and return them in a list '''
+    ''' get readings from all sensors and return them in a dictionary '''
     
     # debug message
     print('Getting sensor readings')
@@ -275,7 +279,7 @@ def get_sensor_readings():
 # Upload readings to MQTT broker
 ####################################################################################
 
-def log_readings(ow_data, sensor_data):
+def log_readings(ow_data, sensor_data, wifi_rssi):
     ''' upload sensor readings to MQTT broker '''
     
     # debug message
@@ -290,12 +294,13 @@ def log_readings(ow_data, sensor_data):
     ac_pres = sensor_data['bmp180_pres']
     ac_lum  = sensor_data['bh1750_lum']
     ac_batv = sensor_data['bat_volt']
+    ac_rssi = wifi_rssi
     
     # construct the payload for influxdb_v2
     # <measurement>[,<tag_key>=<tag_value>[,<tag_key>=<tag_value>]] <field_key>=<field_value>[,<field_key>=<field_value>] [<timestamp>]
     payload = ''
     payload += 'forecasts,source={},location={} ow_temp={},ow_hum={},ow_pres={} \r\n' .format('OpenWeatherMap', str(config.OPENWEATHERMAP_CITY), str(ow_temp), str(ow_hum), str(ow_pres))
-    payload += 'actuals,source={},location={} ac_temp={},ac_hum={},ac_pres={},ac_lum={},ac_batv={} \r\n' .format('weerstation', str(config.OPENWEATHERMAP_CITY), str(ac_temp), str(ac_hum), str(ac_pres), str(ac_lum), str(ac_batv))
+    payload += 'actuals,source={},location={} ac_temp={},ac_hum={},ac_pres={},ac_lum={},ac_batv={},ac_rssi={} \r\n' .format(config.STATION_ID, str(config.OPENWEATHERMAP_CITY), str(ac_temp), str(ac_hum), str(ac_pres), str(ac_lum), str(ac_batv), str(ac_rssi))
    
     try:
         # instantiate MQTT object
@@ -324,7 +329,7 @@ def log_readings(ow_data, sensor_data):
 ####################################################################################
 
 def deepsleep_till_next_cycle():
-    ''' put the µcontroller into deepsleep to save battery for config.INTERVAL seconds. '''
+    ''' put the µcontroller into deepsleep to save battery power for config.INTERVAL seconds. '''
     
     # debug message
     print('Going into deepsleep for {} seconds...' .format(config.INTERVAL))
@@ -344,7 +349,7 @@ def run():
     try:
         
         # connect to WiFi network
-        connect_wifi()
+        wifi_rssi = connect_wifi()
         
         # get OpenWeatherMap data
         ow_data = get_weather_data()
@@ -353,11 +358,12 @@ def run():
         sensor_data = get_sensor_readings()
         
         # upload readings to MQTT broker
-        log_readings(ow_data, sensor_data)
+        log_readings(ow_data, sensor_data, wifi_rssi)
 
     except Exception as exc:
         sys.print_exception(exc)
         show_error()
+        # reset to try again
         utime.sleep(5)
         reset()
     
@@ -367,6 +373,3 @@ def run():
         
 
 run()
-        
-    
-

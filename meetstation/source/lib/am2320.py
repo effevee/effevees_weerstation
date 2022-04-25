@@ -38,12 +38,13 @@ class AM2320:
         # wake sensor
         try:
             self.i2c.writeto(address, b'')
+            time.sleep_ms(3)
         except OSError:
             pass
         # read 4 registers starting at offset 0x00
         self.i2c.writeto(address, b'\x03\x00\x04')
         # wait at least 1.5ms
-        time.sleep_ms(2)
+        time.sleep_ms(3)
         # read data
         self.i2c.readfrom_mem_into(address, 0, buf)
         crc = ustruct.unpack('<H', bytearray(buf[-2:]))[0]
