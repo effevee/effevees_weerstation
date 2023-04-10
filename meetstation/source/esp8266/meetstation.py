@@ -6,14 +6,14 @@
     The backend Raspberry Pi sends the MQTT data with Telegraf to an Influxdb database. A Influxdb dashboard visualises the weather data.
     All software on the backend is setup with Docker containers.
     
-    Hardware : - DOIT ESP32 DEVKit v1 dev board
+    Hardware : - Wemos D1 Mini Pro dev board
                - AM2320 temperature and humidity sensor board
                - BMP180 temperature, pressure and altitude sensor board
                - BH1750 light sensor board
     
     Software : MicroPython code developped by Effevee
     
-    Wiring :    ESP32     AM2320     BMP180     BH1750FVI     OLED     Debug   18650 battery
+    Wiring :    WEMOS     AM2320     BMP180     BH1750FVI     OLED     Debug   18650 battery
                 Pin GPIO    Pin        Pin         Pin        Pin       ON     voltage monitor
                 --------   -----     ------     ---------     ----     -----   ---------------
                 3V           1         VIN         VCC        VCC
@@ -304,7 +304,7 @@ def log_readings(ow_data, sensor_data, wifi_rssi):
    
     try:
         # instantiate MQTT object
-        client = MQTTClient('effevees_weerstation', config.MQTT_HOST, keepalive=30)
+        client = MQTTClient('effevees_weerstation', config.MQTT_HOST, user=config.MQTT_USER, password=config.MQTT_PASS, keepalive=30)
     
         # connect to MQTT broker
         client.connect()

@@ -37,3 +37,5 @@ OPENWEATHERMAP_URL = "https://api.openweathermap.org/data/2.5/weather?lat={lat}&
 # MQTT variables
 MQTT_HOST = "<IP address MQTT host>"
 MQTT_TOPIC = "weatherdata"
+MQTT_USER = "<Your MQTT user>"
+MQTT_PASS = "<Your MQTT password>"
